@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generic Application Automation Demo</title>
+<style>
+  :root { --bg:#f7f7f7; --ink:#111; --panel:#fff; --line:#d8d8d8; --green:#63c563; --accent:#1f6feb; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:Arial,Helvetica,sans-serif; background:var(--bg); color:var(--ink); }
+  header { padding:18px 24px; border-bottom:1px solid var(--line); background:#fff; }
+  h1 { margin:0 0 6px; font-size:24px; }
+  main { max-width:1200px; margin:0 auto; padding:24px; display:grid; grid-template-columns:minmax(540px,1.2fr) minmax(320px,.8fr); gap:24px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px; }
+  .device-title { font-weight:700; margin-bottom:12px; }
+  .device { width:510px; max-width:100%; min-height:720px; margin:auto; border-radius:48px; background:#000; padding:72px 66px 48px; position:relative; box-shadow:0 12px 30px rgba(0,0,0,.12); }
+  .device::before { content:"device running generic_application"; position:absolute; top:-34px; left:0; right:0; color:#111; text-align:center; font-size:14px; font-weight:700; }
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:32px 36px; }
+  .tile { aspect-ratio:1 / 1.2; background:var(--green); border:3px solid transparent; cursor:pointer; position:relative; transition:.2s; }
+  .tile.selected { border-color:#fff; outline:4px solid var(--accent); transform:scale(1.03); }
+  .tile-number { position:absolute; bottom:6px; right:8px; color:#113d11; font-weight:700; font-size:12px; }
+  .menu { position:absolute; min-width:160px; background:#fff; border:1px solid #bbb; border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.25); overflow:hidden; z-index:20; display:none; }
+  .menu button { width:100%; padding:10px 14px; background:#fff; border:0; border-bottom:1px solid #eee; text-align:left; cursor:pointer; }
+  .menu button:last-child { border-bottom:0; }
+  .menu button:hover, .menu button.active { background:#eaf2ff; }
+  .composer { margin-top:18px; display:none; background:#f3f3f3; border-radius:10px; padding:12px; }
+  .composer label { display:block; font-weight:700; margin-bottom:7px; }
+  .composer textarea { width:100%; min-height:90px; resize:vertical; padding:10px; font:inherit; }
+  .controls { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+  button.primary { border:0; border-radius:8px; padding:10px 14px; cursor:pointer; background:#111; color:#fff; }
+  button.secondary { border:1px solid #aaa; border-radius:8px; padding:10px 14px; cursor:pointer; background:#fff; color:#111; }
+  input[type=file] { max-width:100%; }
+  pre { margin:0; background:#0d1117; color:#d7e2f0; border-radius:8px; padding:12px; min-height:360px; overflow:auto; white-space:pre-wrap; font:13px/1.45 Menlo,Consolas,monospace; }
+  .note { font-size:13px; color:#555; line-height:1.5; }
+  .refs { margin-top:24px; font-size:14px; line-height:1.5; }
+  .refs li { margin-bottom:8px; }
+  @media (max-width:900px) { main { grid-template-columns:1fr; } .device { min-height:620px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Generic Application Automation Demo</h1>
+  <div class="note">Browser-contained demonstration: selects a random square, opens the menu, chooses Contact, types a message from an automation text file, and logs every step.</div>
+</header>
+<main>
+  <section class="card">
+    <div class="device-title">Visual device simulation</div>
+    <div id="device" class="device" aria-label="device running generic_application">
+      <div id="grid" class="grid" aria-label="generic_application item grid"></div>
+      <div id="menu" class="menu" role="menu" aria-label="item options">
+        <button data-action="bookmark">Bookmark</button>
+        <button data-action="contact">Contact</button>
+        <button data-action="block">Block</button>
+      </div>
+      <div id="composer" class="composer">
+        <label for="messageBox">Contact message</label>
+        <textarea id="messageBox"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="controls">
+      <button id="runBtn" class="primary">Run automation</button>
+      <button id="resetBtn" class="secondary">Reset</button>
+    </div>
+    <p><strong>Automation command file:</strong></p>
+    <input id="commandFile" type="file" accept=".txt,text/plain">
+    <p class="note">If no file is selected, the built-in default command set is used.</p>
+    <h2>Process log</h2>
+    <pre id="log" aria-live="polite"></pre>
+    <p class="note"><strong>Important:</strong> ordinary browser JavaScript cannot enumerate arbitrary operating-system processes. This log shows the real automation steps executed by this page itself, not macOS/Linux process-table entries. Access to OS process lists would require a trusted local helper such as Node.js, Python, PowerShell, or a native application.</p>
+  </section>
+
+  <section class="card refs" style="grid-column:1/-1">
+    <h2>References (APA 7th)</h2>
+    <ul>
+      <li>MDN Web Docs. (2025). <em>Math.random()</em>. Mozilla. https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random</li>
+      <li>MDN Web Docs. (n.d.). <em>Window: setTimeout() method</em>. Mozilla. https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout</li>
+      <li>MDN Web Docs. (n.d.). <em>FileReader: readAsText() method</em>. Mozilla. https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsText</li>
+    </ul>
+  </section>
+</main>
+
+<script>
+(() => {
+  const grid = document.getElementById('grid');
+  const menu = document.getElementById('menu');
+  const composer = document.getElementById('composer');
+  const messageBox = document.getElementById('messageBox');
+  const logBox = document.getElementById('log');
+  const fileInput = document.getElementById('commandFile');
+  const runBtn = document.getElementById('runBtn');
+  const resetBtn = document.getElementById('resetBtn');
+
+  let commands = {
+    APP: 'generic_application',
+    ACTION: 'contact',
+    MESSAGE: 'Hello, how are you?',
+    DELAY_MS: '700'
+  };
+
+  for (let i = 1; i <= 12; i++) {
+    const tile = document.createElement('button');
+    tile.className = 'tile';
+    tile.type = 'button';
+    tile.dataset.index = i;
+    tile.setAttribute('aria-label', `square ${i}`);
+    tile.innerHTML = `<span class="tile-number">${i}</span>`;
+    tile.addEventListener('click', () => openMenuFor(tile));
+    grid.appendChild(tile);
+  }
+
+  function stamp() {
+    return new Date().toLocaleTimeString();
+  }
+
+  function log(message) {
+    logBox.textContent += `[${stamp()}] ${message}\n`;
+    logBox.scrollTop = logBox.scrollHeight;
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function clearSelection() {
+    document.querySelectorAll('.tile').forEach(t => t.classList.remove('selected'));
+  }
+
+  function openMenuFor(tile) {
+    clearSelection();
+    tile.classList.add('selected');
+
+    const deviceRect = document.getElementById('device').getBoundingClientRect();
+    const tileRect = tile.getBoundingClientRect();
+    menu.style.left = `${Math.min(tileRect.right - deviceRect.left + 8, deviceRect.width - 180)}px`;
+    menu.style.top = `${tileRect.top - deviceRect.top}px`;
+    menu.style.display = 'block';
+    log(`MENU OPENED for square ${tile.dataset.index}: Bookmark | Contact | Block`);
+  }
+
+  async function typeMessage(text, speed = 45) {
+    messageBox.value = '';
+    for (const ch of text) {
+      messageBox.value += ch;
+      await sleep(speed);
+    }
+  }
+
+  function parseCommandText(text) {
+    const parsed = {};
+    text.split(/\r?\n/).forEach(line => {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) return;
+      const eq = trimmed.indexOf('=');
+      if (eq === -1) return;
+      const key = trimmed.slice(0, eq).trim().toUpperCase();
+      const value = trimmed.slice(eq + 1).trim().replace(/^"|"$/g, '');
+      parsed[key] = value;
+    });
+    return { ...commands, ...parsed };
+  }
+
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      commands = parseCommandText(String(reader.result));
+      log(`COMMAND FILE LOADED: ${file.name}`);
+      log(`MESSAGE = "${commands.MESSAGE}"`);
+    };
+    reader.onerror = () => log('ERROR: Could not read command file.');
+    reader.readAsText(file);
+  });
+
+  async function runAutomation() {
+    runBtn.disabled = true;
+    const delay = Math.max(100, Number(commands.DELAY_MS) || 700);
+    log('PROCESS START: browser automation routine');
+    log(`OPEN APPLICATION: ${commands.APP}`);
+    await sleep(delay);
+
+    const tiles = [...document.querySelectorAll('.tile')];
+    const selected = tiles[Math.floor(Math.random() * tiles.length)];
+    log(`RANDOM SELECT: square ${selected.dataset.index}`);
+    selected.click();
+    await sleep(delay);
+
+    const contact = menu.querySelector('[data-action="contact"]');
+    contact.classList.add('active');
+    log('OPTION SELECTED: Contact');
+    await sleep(Math.round(delay * 0.6));
+    menu.style.display = 'none';
+    contact.classList.remove('active');
+
+    composer.style.display = 'block';
+    log('CONTACT COMPOSER OPENED');
+    await typeMessage(commands.MESSAGE || 'Hello, how are you?');
+    log(`TEXT ENTERED: "${messageBox.value}"`);
+    log('PROCESS END: automation completed');
+    runBtn.disabled = false;
+  }
+
+  runBtn.addEventListener('click', runAutomation);
+  resetBtn.addEventListener('click', () => {
+    clearSelection();
+    menu.style.display = 'none';
+    composer.style.display = 'none';
+    messageBox.value = '';
+    logBox.textContent = '';
+  });
+
+  menu.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      log(`MANUAL OPTION: ${btn.textContent}`);
+      if (btn.dataset.action === 'contact') composer.style.display = 'block';
+      menu.style.display = 'none';
+    });
+  });
+
+  log('READY: generic_application simulation loaded.');
+})();
+</script>
+</body>
+</html>

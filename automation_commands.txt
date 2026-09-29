@@ -1,0 +1,4 @@
+APP=generic_application
+ACTION=contact
+MESSAGE="Hello, how are you?"
+DELAY_MS=700
