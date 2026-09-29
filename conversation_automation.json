@@ -1,0 +1,35 @@
+{
+  "app": "generic_application",
+  "selection": {
+    "mode": "random"
+  },
+  "action": "contact",
+  "delayMs": 650,
+  "typingMs": 28,
+  "conversation": [
+    {
+      "speaker": "automation",
+      "text": "Hello, how are you?"
+    },
+    {
+      "speaker": "contact",
+      "text": "I'm doing well. How are you?"
+    },
+    {
+      "speaker": "automation",
+      "text": "I'm doing well, thank you. I wanted to check in."
+    },
+    {
+      "speaker": "contact",
+      "text": "Thanks for reaching out. What would you like to talk about?"
+    },
+    {
+      "speaker": "automation",
+      "text": "Just a quick hello from the generic application demo."
+    },
+    {
+      "speaker": "contact",
+      "text": "Message received. Have a good day."
+    }
+  ]
+}
