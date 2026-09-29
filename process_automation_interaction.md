@@ -25,6 +25,6 @@ DELAY_MS=700
 
 One browser-security distinction is built into the page: the log displays the actual processes/steps being executed by this JavaScript automation, but ordinary HTML/JavaScript cannot enumerate the host Mac or Linux OS process table. Doing that would require a trusted local component such as Node.js, Python, PowerShell, or a native program.
 
-The implementation uses `Math.random()` for the randomized square selection, `setTimeout()`-based asynchronous delays for sequencing, and `FileReader.readAsText()` to load your automation text file. :chatgpt-content-reference{index="0"}
+The implementation uses `Math.random()` for the randomized square selection, `setTimeout()`-based asynchronous delays for sequencing, and `FileReader.readAsText()` to load your automation text file. 
 
 APA references are also included at the bottom of the generated page.
